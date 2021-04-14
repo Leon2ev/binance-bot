@@ -1,121 +1,72 @@
-from dotenv import load_dotenv
-load_dotenv()
-
-import os	
-from time import sleep
-import decimal
+import os
 from binance.client import Client
 from binance.enums import *
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 from binance.websockets import BinanceSocketManager
 from twisted.internet import reactor
 from variables import *
+from dotenv import load_dotenv
 
-api_key = os.getenv('API_KEY')
-api_secret = os.getenv('SECRET_KEY')
+load_dotenv()  # take environment variables from .env.
 
-client = Client(api_key, api_secret)
-
-name = 'ACMUSDT'
-price = {name: None, 'error':False}
-
-def usdt_pairs_trade(msg):
-  ''' define how to process incoming WebSocket messages '''
-  if msg['e'] != 'error':
-    price[name] = float(msg['c'])
-  else:
-    price['error'] = True
-
+api_key = os.getenv("API_PUBLIC_BINANCE")
+secret_key = os.getenv("API_SECRET_BINANCE")
+client = Client(api_key, secret_key)
 bsm = BinanceSocketManager(client)
-conn_key = bsm.start_symbol_ticker_socket(name, usdt_pairs_trade)
-bsm.start()
 
-while not price[name]:
-  # wait for WebSocket to start streaming data
-  sleep(0.1)
+# Signal objects
+signals = list([
+  dict(symbol=str('BNBUSDT'), set_price=float(472.76)),
+  dict(symbol=str('ETHUSDT'), set_price=float(2200.34))
+])
+# Get list of symbols from signals
+symbols = list(map(lambda x: x['symbol'], signals))
 
-while True:
-  # error check to make sure WebSocket is working
-  if price['error']:
-    # stop and restart socket
-    bsm.stop_socket(conn_key)
-    bsm.start()
-    price['error'] = False
-
+# Handle tickers stream
+def process_tickers(msg: list):
+  # Check if stream is a list
+  if type(msg) == list:
+    # Get tickers only if signal presented
+    filtered_tickers = list(filter(lambda x: x['s'] in symbols, msg))
+    # Change ticker object and return only symbol and price
+    tickers = list(map(lambda x: dict(symbol=x['s'], price=float(x['c'])), filtered_tickers))
+    # Loop trough tickers and return list of matched ready to place orders.
+    for ticker in tickers:
+      # Compare ticker with signals. If ticker price <= signal set price add signal to the list
+      orders_to_place = list(filter(lambda x: ticker['symbol'] == x['symbol'] and ticker['price'] <= x['set_price'], signals))
+      # check if orders to place is not an emty list
+      if len(orders_to_place) > 0:
+        # loop trough list of orders and place limit
+        for order in orders_to_place:
+          print('Place buy order:', order)
+      else:
+        # print taht list of order is empty
+        print('No orders to place for:', ticker['symbol'])
   else:
-    if price[name] <= set_price:
-      try:
-        orderB1 = client.order_limit_buy(
-	                  symbol=name,
-	                  quantity=amount_1,
-	                  price=str(price_1))
-        break
-      except BinanceAPIException as e:
-        # error handling goes here
-        print(e)
-      except BinanceOrderException as e:
-        # error handling goes here
-        print(e)
-  sleep(0.1)
+    bsm.stop_socket(ticker_socket)
+    reactor.stop()
+    bsm.start()
 
-bsm.stop_socket(conn_key)
-reactor.stop()
+# Handle user stream
+def process_user_data(msg: list):
+  # эвент
+  execution = bool(msg['e'] == 'executionReport')
+  # то что будет использовать нижу
+  buy = bool(msg['S'] == 'BUY')
+  sell = bool(msg['S'] == 'SELL')
+  order = dict(symbol = msg['s'], price = msg['p'])
+  if execution & buy:
+    # если лимитник на покупку
+    # сообщение будет приходить на любой выставленный ии сработанный
+    # надо сделать что ловить только полностью заполненный ордер
+    print('Buy: ', order)
+  elif execution & sell:
+    # тоже самое но на продажу
+    print('Sell: ', order)
+  else:
+    # это просто для будущего/ можнно удалить
+    print('Unhandled event: ', msg['e'])
 
-'''
-if price == open_price:
-  orderB2 = client.order_limit_buy(
-	        symbol=name,
-	        quantity=amount_2, 
-	        price=str(price_2))
-  orderS1 = client.order_limit_sell(
-	        symbol=name,
-	        quantity=buy1, 
-	        price=str(fix1))
-  
-  if price > fix1:
-    result = client.cancel_order(
-          symbol=name,
-          orderId='orderId')
-    break
-  if price < price_2:
-    orderB3 = client.order_limit_buy(
-	          symbol=name,
-	          quantity=amount_3,
-	          price=str(price_3))
-    orderS2 = client.order_limit_sell(
-	          symbol=name,
-	          quantity=buy12,
-	          price=str(fix2))
-
-    if price > fix2:
-      break
-    if price < price_3:
-      orderB4 = client.order_limit_buy(
-	            symbol=name,
-	            quantity=amount_4,
-	            price=str(price_4))
-      orderS3 = client.order_limit_sell(
-	            symbol=name,
-	            quantity=buy123,
-	            price=str(fix3))
-
-      if price > fix3:
-        break
-      if price < price_4:
-        orderB5 = client.order_limit_buy(
-	              symbol=name,
-	              quantity=amount_5,
-	              price=str(price_5))
-        orderS4 = client.order_limit_sell(
-	              symbol=name,
-	              quantity=buy1234,
-	              price=str(fix4))
-        
-        if price > fix3:
-          break
-        if price < price_4:
-          orderS5 = client.order_limit_buy(
-	                symbol=name,
-	                quantity=amount_5,
-                  price=str(price_5))
-'''
+ticker_socket = bsm.start_ticker_socket(process_tickers)
+user_socket = bsm.start_user_socket(process_user_data)
+bsm.start()
