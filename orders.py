@@ -24,7 +24,6 @@ symbols = list(map(lambda x: x['symbol'], signals))
 
 # Handle tickers stream
 def process_tickers(msg: list):
-  # Check if stream is a list
   if type(msg) == list:
     # Get tickers only if signal presented
     filtered_tickers = list(filter(lambda x: x['s'] in symbols, msg))
@@ -40,7 +39,7 @@ def process_tickers(msg: list):
         for order in orders_to_place:
           print('Place buy order:', order)
       else:
-        # print taht list of order is empty
+        # print that list if order is empty
         print('No orders to place for:', ticker['symbol'])
   else:
     bsm.stop_socket(ticker_socket)
