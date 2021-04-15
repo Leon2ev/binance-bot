@@ -4,6 +4,7 @@ import decimal
 class Parameters():
   def __init__(
     self,
+    symbol: str,
     open_price: float,
     first_order_quote: int,
     coefficient_quote: float,
@@ -11,6 +12,7 @@ class Parameters():
     coefficient_fix: float,
     steps: int
   ):
+    self.symbol = symbol
     self.open_price = open_price
     self.first_order_quote = first_order_quote
     self.coefficient_quote = coefficient_quote
@@ -24,7 +26,7 @@ class Parameters():
   def b_magic(self) -> int:
     return int(4 - self.a_magic()) if 4 - self.a_magic() >= 0 else int(0)
 
-  def triger_price(self) -> float:
+  def triger_buy_limit(self) -> float:
     return float(round(self.open_price + self.open_price / 800, self.a_magic()))
 
   def exponential_coefficient(self, index: int):
@@ -86,6 +88,7 @@ class Parameters():
       price_levels.append(round((quote + quote * self.coefficient_fix / 100) / price, self.a_magic()))
     return price_levels
 
+symbol = str('BNBUSDT')
 open_price = float(26.38)
 first_order_quote = int(20)
 coefficient_quote = float(1.2)
@@ -93,5 +96,4 @@ coefficient_base = float(1)
 coefficient_fix = float(2)
 steps = int(5)
 
-parameters = Parameters(open_price, first_order_quote, coefficient_quote, coefficient_base, coefficient_fix, steps)
-print(parameters.sell_limit_price_levels())
+test = Parameters(symbol, open_price, first_order_quote, coefficient_quote, coefficient_base, coefficient_fix, steps)
