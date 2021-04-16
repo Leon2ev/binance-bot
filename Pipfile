@@ -8,6 +8,7 @@ numpy = "*"
 pandas = "*"
 python-binance = "*"
 python-dotenv = "*"
+mypy = "*"
 
 [dev-packages]
 

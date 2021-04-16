@@ -1,24 +1,16 @@
 import numpy as np
 import decimal
+from typing import Any, TypedDict
 
-class Parameters():
+class OrderParameters():
   def __init__(
     self,
-    symbol: str,
-    open_price: float,
-    first_order_quote: int,
-    coefficient_quote: float,
-    coefficient_base: float,
-    coefficient_fix: float,
-    steps: int
+    parameters
   ):
-    self.symbol = symbol
-    self.open_price = open_price
-    self.first_order_quote = first_order_quote
-    self.coefficient_quote = coefficient_quote
-    self.coefficient_base = coefficient_base
-    self.coefficient_fix = coefficient_fix
-    self.steps = steps
+    for key, value in parameters.items():
+      setattr(self, key, value)
+
+  def __getattr__(self, name: str) -> Any: pass
 
   def a_magic(self) -> int:
     return abs(decimal.Decimal(str(self.open_price).rstrip('0')).as_tuple().exponent)
@@ -39,10 +31,10 @@ class Parameters():
     else:
       return self.coefficient_base * 2 / 100
 
-  def buy_limit_quote_volumes(self) -> list:
+  def buy_limit_quote_volumes(self) -> list[int]:
     volumes = list()
-    volume = int(0)
-    i = int(1)
+    volume: int = 0
+    i: int = 1
     while i <= self.steps:
       if i == 1:
         volume = self.first_order_quote
@@ -54,10 +46,9 @@ class Parameters():
         i += 1
     return volumes
   
-  def buy_limit_price_levels(self) -> list:
+  def buy_limit_price_levels(self) -> list[float]:
     price_levels = list()
-    price_level = int(0)
-    i = int(1)
+    i: int = 1
     while i <= self.steps:
       if i == 1:
         price_level = self.open_price
@@ -70,30 +61,20 @@ class Parameters():
         i += 1
     return price_levels
 
-  def buy_limit_base_volumes(self) -> list:
+  def buy_limit_base_volumes(self) -> list[float]:
     volumes = list()
     for quote, price in zip(self.buy_limit_quote_volumes(), self.buy_limit_price_levels()):
       volumes.append(round(quote / price, self.b_magic()))
     return volumes
 
-  def buy_limit_accumulated_quote_volumes(self) -> list:
+  def buy_limit_accumulated_quote_volumes(self) -> list[int]:
     return list(np.cumsum(self.buy_limit_quote_volumes()))
 
-  def sell_limit_base_volumes(self) -> list:
+  def sell_limit_accumulated_base_volumes(self) -> list[float]:
     return list(np.cumsum(self.buy_limit_base_volumes()))
 
-  def sell_limit_price_levels(self) -> list:
+  def sell_limit_price_levels(self) -> list[float]:
     price_levels = list()
-    for quote, price in zip(self.buy_limit_accumulated_quote_volumes(), self.sell_limit_base_volumes()):
+    for quote, price in zip(self.buy_limit_accumulated_quote_volumes(), self.sell_limit_accumulated_base_volumes()):
       price_levels.append(round((quote + quote * self.coefficient_fix / 100) / price, self.a_magic()))
     return price_levels
-
-symbol = str('BNBUSDT')
-open_price = float(26.38)
-first_order_quote = int(20)
-coefficient_quote = float(1.2)
-coefficient_base = float(1)
-coefficient_fix = float(2)
-steps = int(5)
-
-test = Parameters(symbol, open_price, first_order_quote, coefficient_quote, coefficient_base, coefficient_fix, steps)

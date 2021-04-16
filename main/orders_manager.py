@@ -4,7 +4,6 @@ from binance.enums import *
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 from binance.websockets import BinanceSocketManager
 from twisted.internet import reactor
-from variables import *
 from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables from .env.
@@ -14,25 +13,20 @@ secret_key = os.getenv("API_SECRET_BINANCE")
 client = Client(api_key, secret_key)
 bsm = BinanceSocketManager(client)
 
-# Signal objects
-signals = list([
-  dict(symbol=str('BNBUSDT'), set_price=float(472.76)),
-  dict(symbol=str('ETHUSDT'), set_price=float(2200.34))
-])
 # Get list of symbols from signals
 symbols = list(map(lambda x: x['symbol'], signals))
 
 # Handle tickers stream
-def process_tickers(msg: list):
-  if type(msg) == list:
+def process_tickers(msg: list[dict]) -> None:
+  if len(msg) > 0:
     # Get tickers only if signal presented
-    filtered_tickers = list(filter(lambda x: x['s'] in symbols, msg))
+    filtered_tickers: list = list(filter(lambda x: x['s'] in symbols, msg))
     # Change ticker object and return only symbol and price
-    tickers = list(map(lambda x: dict(symbol=x['s'], price=float(x['c'])), filtered_tickers))
+    tickers: list = list(map(lambda x: dict(symbol=x['s'], price=float(x['c'])), filtered_tickers))
     # Loop trough tickers and return list of matched ready to place orders.
     for ticker in tickers:
       # Compare ticker with signals. If ticker price <= signal set price add signal to the list
-      orders_to_place = list(filter(lambda x: ticker['symbol'] == x['symbol'] and ticker['price'] <= x['set_price'], signals))
+      orders_to_place: list = list(filter(lambda x: ticker['symbol'] == x['symbol'] and ticker['price'] <= x['set_price'], signals))
       # check if orders to place is not an emty list
       if len(orders_to_place) > 0:
         # loop trough list of orders and place limit
@@ -47,13 +41,13 @@ def process_tickers(msg: list):
     bsm.start()
 
 # Handle user stream
-def process_user_data(msg: list):
+def process_user_data(msg: dict) -> None:
   # эвент
-  execution = bool(msg['e'] == 'executionReport')
+  execution: bool = msg['e'] == 'executionReport'
   # то что будет использовать нижу
-  buy = bool(msg['S'] == 'BUY')
-  sell = bool(msg['S'] == 'SELL')
-  order = dict(symbol = msg['s'], price = msg['p'])
+  buy: bool = msg['S'] == 'BUY'
+  sell: bool = msg['S'] == 'SELL'
+  order: dict = dict(symbol = msg['s'], price = msg['p'])
   if execution & buy:
     # если лимитник на покупку
     # сообщение будет приходить на любой выставленный ии сработанный
