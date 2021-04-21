@@ -9,6 +9,8 @@ pandas = "*"
 python-binance = "*"
 python-dotenv = "*"
 mypy = "*"
+websockets = "*"
+asyncio = "*"
 
 [dev-packages]
 

@@ -2,13 +2,23 @@ import numpy as np
 import decimal
 from typing import Any, TypedDict
 
-class OrderParameters():
+class Signal(TypedDict):
+  SYMBOL: str
+  OPEN_PRICE: float
+  FIRST_ORDER_QUOTE: int
+  COEFFICIENT_QUOTE: float
+  COEFFICIENT_BASE: float
+  COEFFICIENT_FIX: float
+  STEPS: int
+
+class Orders():
   def __init__(
     self,
-    parameters
+    signal: Signal
   ):
-    for key, value in parameters.items():
-      setattr(self, key, value)
+    for key, value in signal.items():
+      setattr(self, key.lower(), value)
+    self.step: int = 0
 
   def __getattr__(self, name: str) -> Any: pass
 
