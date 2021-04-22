@@ -25,7 +25,7 @@ class Signals():
     in_queue = list(filter(lambda x: x.symbol == signal['SYMBOL'], self.signal_list))
     if not in_queue:
       print('New pair added to the queue:', signal['SYMBOL'])
-      self.queue.append(OrdersForPair(signal))
+      self.signal_list.append(Orders(signal))
       print('test')
 
   async def run(self) -> None:
