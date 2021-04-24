@@ -96,7 +96,6 @@ def tickers_stream_handler(data: list[dict]) -> None:
     bsm.start()
 
 def user_data_handler(msg: dict) -> None:
-  client.cancel_order(symbol=symbol, orderId=orders[0]['orderId'])
   execution: bool = msg['e'] == 'executionReport'
   filled: bool = msg['X'] == 'FILLED'
   order: Orders = next(filter(lambda x: msg['s'] == x.symbol, signal_list))
