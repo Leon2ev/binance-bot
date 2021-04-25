@@ -9,6 +9,7 @@ class Signal(TypedDict):
   COEFFICIENT_QUOTE: float
   COEFFICIENT_BASE: float
   COEFFICIENT_FIX: float
+  COEFFICIENT_SET: int
   STEPS: int
 
 class Orders():
@@ -29,7 +30,7 @@ class Orders():
     return int(4 - self.a_magic()) if 4 - self.a_magic() >= 0 else int(0)
 
   def triger_buy_limit(self) -> float:
-    return float(round(self.open_price + self.open_price / 800, self.a_magic()))
+    return float(round(self.open_price + self.open_price / self.coefficient_set, self.a_magic()))
 
   def exponential_coefficient(self, index: int):
     if index == 2:

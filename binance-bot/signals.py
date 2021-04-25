@@ -10,6 +10,7 @@ class Signal(TypedDict):
   COEFFICIENT_QUOTE: float
   COEFFICIENT_BASE: float
   COEFFICIENT_FIX: float
+  COEFFICIENT_SET: int
   STEPS: int
 
 class Signals():
