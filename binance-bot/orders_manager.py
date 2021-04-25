@@ -97,10 +97,11 @@ def tickers_stream_handler(data: list[dict]) -> None:
 
 def user_data_handler(msg: dict) -> None:
   execution: bool = msg['e'] == 'executionReport'
-  filled: bool = msg['X'] == 'FILLED'
   order: Orders = next(filter(lambda x: msg['s'] == x.symbol, signal_list))
-  if execution and order and filled:
-    order_manager(order, msg)
+  if execution and order:
+    filled: bool = msg['X'] == 'FILLED'
+    if filled:
+      order_manager(order, msg)
   else:
     print('Unhandled event: ', msg['e'])
 
