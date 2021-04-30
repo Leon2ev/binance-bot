@@ -22,6 +22,7 @@ bsm = BinanceSocketManager(client)
 token: str = str(os.getenv("RTW_TOKEN"))
 signals = Signals(token)
 signal_list = signals.signal_list
+signal_symbols = signals.signal_symbols()
 
 def filter_and_map_tickers(symbols: list[str], data: list[dict]) -> list[dict]:
   '''
@@ -96,8 +97,7 @@ def order_manager(order: Orders, msg: dict) -> None:
 
 def tickers_stream_handler(data: list[dict]) -> None:
   if data:
-    symbols: list[str] = list(map(lambda x: x.symbol, signal_list))
-    tickers = filter_and_map_tickers(symbols, data)
+    tickers = filter_and_map_tickers(signal_symbols, data)
     place_first_orders(tickers)
   else:
     bsm.stop_socket(ticker_socket)

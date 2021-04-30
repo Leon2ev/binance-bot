@@ -18,6 +18,9 @@ class Signals():
     self.token = token
     self.signal_list: list = list()
 
+  def signal_symbols(self) -> list[str]:
+    return list(map(lambda x: x.symbol, self.signal_list))
+
   def add_to_queue(self, signal: Signal) -> None:
     '''
     Create OrdersForPair instance with received signal parameters if it's not
