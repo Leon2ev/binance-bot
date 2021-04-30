@@ -20,6 +20,9 @@ class Orders():
     for key, value in signal.items():
       setattr(self, key.lower(), value)
     self.step: int = 0
+    self.initiated: bool = False
+    self.buy_limit_id: int = int()
+    self.sell_limit_id: int = int()
 
   def __getattr__(self, name: str) -> Any: pass
 
