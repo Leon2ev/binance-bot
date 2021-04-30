@@ -4,7 +4,6 @@ from binance.client import Client
 from binance.enums import *
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 from binance.websockets import BinanceSocketManager
-from twisted.internet import reactor
 from dotenv import load_dotenv
 
 # Local classes
@@ -102,7 +101,6 @@ def tickers_stream_handler(data: list[dict]) -> None:
     place_first_orders(tickers)
   else:
     bsm.stop_socket(ticker_socket)
-    reactor.stop()
     bsm.start()
 
 def user_data_handler(msg: dict) -> None:
