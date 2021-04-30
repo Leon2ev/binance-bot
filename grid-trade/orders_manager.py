@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import asyncio
 from binance.client import Client
 from binance.enums import *
@@ -24,12 +25,12 @@ signals = Signals(token)
 signal_list = signals.signal_list
 signal_symbols = signals.signal_symbols()
 
-def filter_and_map_tickers(symbols: list[str], data: list[dict]) -> list[dict]:
+def filter_and_map_tickers(symbols: list[str], msg: list[dict]) -> list[dict]:
   '''
   Filter list of ticker objects with selected symbols.
   Map ticker object and return custom objects with needed properties.
   '''
-  filtered: list[dict] = list(filter(lambda x: x['s'] in symbols, data))
+  filtered: list[dict] = list(filter(lambda x: x['s'] in symbols, msg))
   tickers: list[dict] = list(map(lambda x: dict(symbol=x['s'], price=float(x['c'])), filtered))
   return tickers
 
@@ -95,25 +96,36 @@ def order_manager(order: Orders, msg: dict) -> None:
     print(f'Fix for: {order.symbol}')
     signal_list.remove(order)
 
-def tickers_stream_handler(data: list[dict]) -> None:
-  if data:
-    tickers = filter_and_map_tickers(signal_symbols, data)
-    place_first_orders(tickers)
-  else:
+def tickers_stream_handler(msg: Any) -> None:
+  '''
+  By default should receive list[dict].
+  If get dict it's an error that will be hadled.
+  '''
+  if msg == dict() and msg['e'] == 'error':
+    print(msg['e'])
     bsm.stop_socket(ticker_socket)
     bsm.start()
+  else:
+    tickers = filter_and_map_tickers(signal_symbols, msg)
+    place_first_orders(tickers)
 
 def user_data_handler(msg: dict) -> None:
+  error: bool = msg['e'] == 'error'
   execution: bool = msg['e'] == 'executionReport'
-  if signal_list and execution:
-    order: Orders = next(filter(lambda x: msg['s'] == x.symbol, signal_list))
-    if order:
-      order_manager(order, msg)
+  if error:
+    print(msg['e'])
+    bsm.stop_socket(user_socket)
+    bsm.start()
   else:
-    print('Unhandled event: ', msg['e'])
+    if signal_list and execution:
+      order: Orders = next(filter(lambda x: msg['s'] == x.symbol, signal_list))
+      if order:
+        order_manager(order, msg)
+    else:
+      print('Unhandled event: ', msg['e'])
 
 ''' Binance socket instances '''
-ticker_socket = bsm.start_ticker_socket(tickers_stream_handler)
+ticker_socket = bsm.start_miniticker_socket(tickers_stream_handler)
 user_socket = bsm.start_user_socket(user_data_handler)
 bsm.start()
 
