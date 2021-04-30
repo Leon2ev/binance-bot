@@ -1,12 +1,11 @@
 import numpy as np
 import decimal
 from typing import Any, TypedDict
-from signals import Signal
 
 class Orders():
   def __init__(
     self,
-    signal: Signal
+    signal
   ):
     for key, value in signal.items():
       setattr(self, key.lower(), value)
