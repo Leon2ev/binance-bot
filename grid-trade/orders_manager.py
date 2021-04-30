@@ -36,21 +36,43 @@ def filter_and_map_tickers(symbols: list[str], msg: list[dict]) -> list[dict]:
 
 def place_buy_limit(order: Orders) -> None:
   step = order.step
-  buy_order = client.order_limit_buy(
-    symbol=order.symbol,
-    quantity=order.buy_limit_base_volumes()[step],
-    price=str(order.buy_limit_price_levels()[step]))
-  order.buy_limit_id = buy_order['orderId']
-  print(f'Step({step}) BUY limit for {order.symbol}, Price: {order.buy_limit_price_levels()[step]}, Amount: {order.buy_limit_base_volumes()[step]}')
+  try:
+    buy_order = client.order_limit_buy(
+      symbol=order.symbol,
+      quantity=order.buy_limit_base_volumes()[step],
+      price=str(order.buy_limit_price_levels()[step]))
+    order.buy_limit_id = buy_order['orderId']
+  except BinanceAPIException as e:
+    print(e)
+  except BinanceOrderException as e:
+    print(e)
+  else:
+    print(f'Step({step}) BUY limit for {order.symbol}, Price: {order.buy_limit_price_levels()[step]}, Amount: {order.buy_limit_base_volumes()[step]}')
 
 def place_sell_limit(order: Orders) -> None:
   step = order.step
-  sell_order = client.order_limit_sell(
-    symbol=order.symbol,
-    quantity=order.sell_limit_accumulated_base_volumes()[step],
-    price="{:.2f}".format(order.sell_limit_price_levels()[step]))
-  order.sell_limit_id = sell_order['orderId']
-  print(f'Step({step}) SELL limit for {order.symbol}, Price: {order.sell_limit_price_levels()[step]}, Amount {order.sell_limit_accumulated_base_volumes()[step]}')
+  try:
+    sell_order = client.order_limit_sell(
+      symbol=order.symbol,
+      quantity=order.sell_limit_accumulated_base_volumes()[step],
+      price="{:.2f}".format(order.sell_limit_price_levels()[step]))
+    order.sell_limit_id = sell_order['orderId']
+  except BinanceAPIException as e:
+    print(e)
+  except BinanceOrderException as e:
+    print(e)
+  else:
+    print(f'Step({step}) SELL limit for {order.symbol}, Price: {order.sell_limit_price_levels()[step]}, Amount {order.sell_limit_accumulated_base_volumes()[step]}')
+
+def cancel_order(symbol: str, orderId: int, order_type: str) -> None:
+  try:
+    order = client.cancel_order(symbol=symbol, orderId=orderId)
+  except BinanceAPIException as e:
+    print(e)
+  except BinanceOrderException as e:
+    print(e)
+  else:
+    print(f'{order_type} limit canceled for: {order.symbol}')
 
 def place_first_orders(tickers: list[dict]) -> None:
   '''
@@ -81,7 +103,7 @@ def order_manager(order: Orders, msg: dict) -> None:
   if buy and filled and order.step < order.steps:
     orderId = order.sell_limit_id
     if orderId:
-      client.cancel_order(symbol=symbol, orderId=orderId)
+      cancel_order(symbol=symbol, orderId=orderId, order_type='SELL')
       place_sell_limit(order)
     else:
       place_sell_limit(order)
@@ -91,8 +113,7 @@ def order_manager(order: Orders, msg: dict) -> None:
     place_buy_limit(order)
   elif sell and filled:
     orderId = order.buy_limit_id
-    client.cancel_order(symbol=symbol, orderId=orderId)
-    print(f'Buy limit canceled for: {order.symbol}')
+    cancel_order(symbol=symbol, orderId=orderId, order_type='BUY')
     print(f'Fix for: {order.symbol}')
     signal_list.remove(order)
 
