@@ -1,16 +1,7 @@
 import numpy as np
 import decimal
 from typing import Any, TypedDict
-
-class Signal(TypedDict):
-  SYMBOL: str
-  OPEN_PRICE: float
-  FIRST_ORDER_QUOTE: int
-  COEFFICIENT_QUOTE: float
-  COEFFICIENT_BASE: float
-  COEFFICIENT_FIX: float
-  COEFFICIENT_SET: int
-  STEPS: int
+from signals import Signal
 
 class Orders():
   def __init__(
