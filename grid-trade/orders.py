@@ -35,9 +35,9 @@ class Orders():
     else:
       return self.coefficient_base * 2 / 100
 
-  def buy_limit_quote_volumes(self) -> list[int]:
+  def buy_limit_quote_volumes(self) -> list[float]:
     volumes = list()
-    volume: int = 0
+    volume: float = 0
     i: int = 1
     while i <= self.steps:
       if i == 1:
@@ -45,7 +45,7 @@ class Orders():
         volumes.append(volume)
         i += 1
       else:
-        volume = int(round(volume * self.coefficient_quote, 0))
+        volume = float(round(volume * self.coefficient_quote, 2))
         volumes.append(volume)
         i += 1
     return volumes
