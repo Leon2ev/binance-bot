@@ -71,7 +71,7 @@ def cancel_order(symbol: str, orderId: int, order_type: str) -> None:
   except BinanceOrderException as e:
     print(e)
   else:
-    print(f'{order_type} limit canceled for: {order.symbol}')
+    print(f'{order_type} limit canceled for: {order}')
 
 def place_first_orders(tickers: list[dict]) -> None:
   '''
