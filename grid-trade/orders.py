@@ -1,4 +1,3 @@
-import numpy as np
 import decimal
 from typing import Any, TypedDict
 
@@ -71,11 +70,21 @@ class Orders():
       volumes.append(round(quote / price, self.b_magic()))
     return volumes
 
-  def buy_limit_accumulated_quote_volumes(self) -> list[int]:
-    return list(np.cumsum(self.buy_limit_quote_volumes()))
+  def cumulative_sum(self, x: list) -> list[float]:
+    cum_sum: list = list()
+    current: float = 0
+
+    for i in x:
+      current = round(current + i, self.b_magic())
+      cum_sum.append(current)
+
+    return cum_sum
+
+  def buy_limit_accumulated_quote_volumes(self) -> list[float]:
+    return self.cumulative_sum(self.buy_limit_quote_volumes())
 
   def sell_limit_accumulated_base_volumes(self) -> list[float]:
-    return list(np.cumsum(self.buy_limit_base_volumes()))
+    return self.cumulative_sum(self.buy_limit_base_volumes())
 
   def sell_limit_price_levels(self) -> list[float]:
     price_levels = list()
