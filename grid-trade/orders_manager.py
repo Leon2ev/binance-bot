@@ -54,7 +54,7 @@ def place_sell_limit(order: Orders) -> None:
     sell_order = client.order_limit_sell(
       symbol=order.symbol,
       quantity=order.sell_limit_accumulated_base_volumes()[step],
-      price="{:.2f}".format(order.sell_limit_price_levels()[step]))
+      price=str(order.sell_limit_price_levels()[step]))
     order.sell_limit_id = sell_order['orderId']
   except BinanceAPIException as e:
     print(e)
@@ -63,7 +63,7 @@ def place_sell_limit(order: Orders) -> None:
   else:
     print(f'Step({step}) SELL limit for {order.symbol}, Price: {order.sell_limit_price_levels()[step]}, Amount {order.sell_limit_accumulated_base_volumes()[step]}')
 
-def cancel_order(symbol: str, orderId: int, order_type: str) -> None:
+def cancel_order(symbol: str, orderId: int) -> None:
   try:
     order = client.cancel_order(symbol=symbol, orderId=orderId)
   except BinanceAPIException as e:
@@ -71,7 +71,11 @@ def cancel_order(symbol: str, orderId: int, order_type: str) -> None:
   except BinanceOrderException as e:
     print(e)
   else:
-    print(f'{order_type} limit canceled for: {order}')
+    status = order['status']
+    side = order['side']
+    order_type = order['type']
+    order_symbol = order['symbol']
+    print(f'{status} {side} {order_type} for: {order_symbol}')
 
 def place_first_orders(tickers: list[dict]) -> None:
   '''
@@ -102,7 +106,7 @@ def order_manager(order: Orders, msg: dict) -> None:
   if buy and filled and order.step < order.steps:
     orderId = order.sell_limit_id
     if orderId:
-      cancel_order(symbol=symbol, orderId=orderId, order_type='SELL')
+      cancel_order(symbol=symbol, orderId=orderId)
       place_sell_limit(order)
     else:
       place_sell_limit(order)
@@ -112,7 +116,7 @@ def order_manager(order: Orders, msg: dict) -> None:
     place_buy_limit(order)
   elif sell and filled:
     orderId = order.buy_limit_id
-    cancel_order(symbol=symbol, orderId=orderId, order_type='BUY')
+    cancel_order(symbol=symbol, orderId=orderId)
     print(f'Fix for: {order.symbol}')
     signal_list.remove(order)
 
@@ -143,7 +147,7 @@ def user_data_handler(msg: dict) -> None:
       if order:
         order_manager(order, msg)
     else:
-      print('Unhandled event: ', msg['e'])
+      print('Unhandled event:', msg['e'])
 
 ''' Binance socket instances '''
 ticker_socket = bsm.start_miniticker_socket(tickers_stream_handler)
