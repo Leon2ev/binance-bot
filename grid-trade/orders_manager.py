@@ -1,14 +1,12 @@
+import asyncio
 import os
 from typing import Any
 
-# external modules
-import asyncio
-from binance import AsyncClient, DepthCacheManager, BinanceSocketManager
+from binance import AsyncClient, BinanceSocketManager
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 
-# internal modules
-from signals import Signals
-from orders import Orders
+from .orders import Orders
+from .signals import Signals
 
 api_key = os.getenv("API_PUBLIC_BINANCE")
 secret_key = os.getenv("API_SECRET_BINANCE")
