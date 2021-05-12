@@ -33,8 +33,6 @@ async def main():
             order.buy_limit_id = buy_order['orderId']
         except BinanceAPIException as e:
             print(e)
-        except BinanceOrderException as e:
-            print(e)
         else:
             print(f'Step({step}) BUY limit for {order.symbol}, Price: {order.buy_limit_price_levels()[step]}, Amount: {order.buy_limit_base_volumes()[step]}')
 
@@ -48,8 +46,6 @@ async def main():
             order.sell_limit_id = sell_order['orderId']
         except BinanceAPIException as e:
             print(e)
-        except BinanceOrderException as e:
-            print(e)
         else:
             print(f'Step({step}) SELL limit for {order.symbol}, Price: {order.sell_limit_price_levels()[step]}, Amount {order.sell_limit_accumulated_base_volumes()[step]}')
 
@@ -57,8 +53,6 @@ async def main():
         try:
             order = await client.cancel_order(symbol=symbol, orderId=orderId)
         except BinanceAPIException as e:
-            print(e)
-        except BinanceOrderException as e:
             print(e)
         else:
             status = order['status']
