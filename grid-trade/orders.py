@@ -25,7 +25,7 @@ class Orders():
         return float(round(self.open_price + self.open_price / self.coefficient_set, self.a_magic()))
 
     def exponential_coefficient(self, index: int):
-        return self.coefficient_base / 100 * (1 + index / 10)
+        return self.coefficient_base/100*(1+index/10)
 
     def buy_limit_quote_volumes(self) -> list[float]:
         volumes = list()
@@ -45,6 +45,7 @@ class Orders():
     
     def buy_limit_price_levels(self) -> list[float]:
         price_levels = list()
+        price_level: float = 0
         i: int = 1
 
         while i <= self.steps:
@@ -66,7 +67,7 @@ class Orders():
             volumes.append(round(quote / price, self.b_magic()))
         return volumes
 
-    def cumulative_sum(self, x: list) -> list[float]:
+    def cumulative_sum(self, x: list[float]) -> list[float]:
         cum_sum: list = list()
         current: float = 0
 
