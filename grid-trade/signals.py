@@ -1,11 +1,9 @@
 import json
 from typing import TypedDict
 
-# external modules
 import websockets
 
-# internal modules
-from orders import Orders
+from .orders import Orders
 
 class Signal(TypedDict):
     SYMBOL: str
@@ -41,9 +39,7 @@ class Signals():
         Receiving parameters for OrdersForPair object.
         '''
         uri = "wss://websocket.cioty.com/crypto/bot/1/channel"
-        print("Connect to rtw channel")
         async with websockets.connect(uri) as websocket:
-            print('Send token')
             await websocket.send('{"token":"' + self.token + '"}')
             print('Connected to rtw channel')
             while True:
