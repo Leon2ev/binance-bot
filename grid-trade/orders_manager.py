@@ -61,7 +61,7 @@ async def main():
             order_symbol = order['symbol']
             print(f'{status} {side} {order_type} for: {order_symbol}')
 
-    def order_manager(order: Orders, msg: dict) -> None:
+    async def order_manager(order: Orders, msg: dict) -> None:
         '''
         The main logic behind order placing. Place sell limit order when buy limit is filled.
         Remove order object and cancel open buy limit order if sell limit is filled.
@@ -75,21 +75,21 @@ async def main():
         if buy and filled and order.step < order.steps:
             orderId = order.sell_limit_id
             if orderId:
-                cancel_order(symbol=symbol, orderId=orderId)
-                place_sell_limit(order)
+                await cancel_order(symbol=symbol, orderId=orderId)
+                await place_sell_limit(order)
             else:
-                place_sell_limit(order)
+                await place_sell_limit(order)
 
             order.step += 1
             print(f'Pair: {order.symbol} Step: {order.step}')
-            place_buy_limit(order)
+            await place_buy_limit(order)
         elif sell and filled:
             orderId = order.buy_limit_id
-            cancel_order(symbol=symbol, orderId=orderId)
+            await cancel_order(symbol=symbol, orderId=orderId)
             print(f'Fix for: {order.symbol}')
             signal_list.remove(order)
 
-    def tickers_stream_handler(tickers: Any) -> None:
+    async def tickers_stream_handler(tickers: Any) -> None:
         '''
         By default should receive list[dict].
         If get dict it's an error that will be hadled.
@@ -105,10 +105,10 @@ async def main():
                 if orders_to_place:
                     for order in orders_to_place:
                         print(f'Pair: {order.symbol} Step: {order.step}')
-                        place_buy_limit(order)
+                        await place_buy_limit(order)
                         order.initiated = True
 
-    def user_data_handler(msg: dict) -> None:
+    async def user_data_handler(msg: dict) -> None:
         '''
         Handle user account event stream.
         Check if executed order symbol is insde signal_list.
@@ -122,7 +122,7 @@ async def main():
             if signal_list and execution:
                 order: Orders = next(filter(lambda x: msg['s'] == x.symbol, signal_list))
                 if order:
-                    order_manager(order, msg)
+                    await order_manager(order, msg)
             else:
                 print('Unhandled event:', msg['e'])
 
@@ -130,7 +130,7 @@ async def main():
     async with bsm.miniticker_socket() as mts:
         while True:
             res = await mts.recv()
-            tickers_stream_handler(res)
+            await tickers_stream_handler(res)
 
     # create user socket listener
     async with bsm.user_socket() as us:
