@@ -25,7 +25,7 @@ class Orders():
         return float(round(self.open_price + self.open_price / self.coefficient_set, self.a_magic()))
 
     def exponential_coefficient(self, index: int):
-        return self.coefficient_base/100*(1+index/10)
+        return self.coefficient_base / 100 * (1 + index / 10)
 
     def buy_limit_quote_volumes(self) -> list[float]:
         volumes = list()
