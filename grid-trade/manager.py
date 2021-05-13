@@ -88,7 +88,7 @@ class OrderManager():
             for ticker in tickers:
                 orders_to_place: list = list(filter(lambda x:
                     ticker['s'] == x.symbol and
-                    ticker['c'] <= x.triger_buy_limit() and
+                    float(ticker['c']) <= x.triger_buy_limit() and
                     x.initiated == False, self.grids_queue))
                 if orders_to_place:
                     for order in orders_to_place:

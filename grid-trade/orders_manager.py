@@ -19,7 +19,7 @@ async def main() -> None:
 
     bsm = BinanceSocketManager(client)
 
-    manager = OrderManager(client, signal_list)              
+    manager = OrderManager(client, signal_list)
 
     async def miniticker_socket(bsm) -> None:
         # create ticker socket listener
