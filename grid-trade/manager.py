@@ -1,13 +1,14 @@
 from typing import Any
 
+from binance import AsyncClient
 from binance.exceptions import BinanceAPIException
 
 from orders import Orders
 
 class OrderManager():
-    def __init__(self, client, grids_queue):
-            self.client = client,
-            self.grids_queue: list[Orders] = grids_queue
+    def __init__(self, client: AsyncClient, grids_queue: list[Orders]):
+            self.client = client
+            self.grids_queue = grids_queue
 
     async def place_buy_limit(self, order: Orders) -> None:
         step = order.step
@@ -15,7 +16,8 @@ class OrderManager():
             buy_order = await self.client.order_limit_buy(
                 symbol=order.symbol,
                 quantity=order.buy_limit_base_volumes()[step],
-                price=str(order.buy_limit_price_levels()[step]))
+                price=str(order.buy_limit_price_levels()[step])
+            )
             order.buy_limit_id = buy_order['orderId']
         except BinanceAPIException as e:
             print(e)
@@ -76,7 +78,6 @@ class OrderManager():
             self.grids_queue.remove(order)
 
     async def tickers_stream_handler(self, tickers: Any) -> None:
-        print(tickers[0])
         '''
         By default should receive list[dict].
         If get dict it's an error that will be hadled.
@@ -96,7 +97,6 @@ class OrderManager():
                         order.initiated = True
 
     async def user_data_handler(self, msg: dict) -> None:
-        print(msg)
         '''
         Handle user account event stream.
         Check if executed order symbol is insde signal_list.

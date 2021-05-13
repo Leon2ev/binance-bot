@@ -18,7 +18,7 @@ class Signal(TypedDict):
 class Signals():
     def __init__(self, token: str):
         self.token = token
-        self.signal_list: list = list()
+        self.signal_list: list[Orders] = list()
 
     def signal_symbols(self) -> list[str]:
         return list(map(lambda x: x.symbol, self.signal_list))
