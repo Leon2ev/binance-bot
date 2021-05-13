@@ -3,10 +3,10 @@ import os
 from typing import Any
 
 from binance import AsyncClient, BinanceSocketManager
-from binance.exceptions import BinanceAPIException, BinanceOrderException
+from binance.exceptions import BinanceAPIException
 
-from .orders import Orders
-from .signals import Signals
+from signals import Signals
+from orders import Orders
 
 api_key = os.getenv("API_PUBLIC_BINANCE")
 secret_key = os.getenv("API_SECRET_BINANCE")
@@ -90,6 +90,7 @@ async def main():
             signal_list.remove(order)
 
     async def tickers_stream_handler(tickers: Any) -> None:
+        print(tickers)
         '''
         By default should receive list[dict].
         If get dict it's an error that will be hadled.
@@ -136,7 +137,7 @@ async def main():
     async with bsm.user_socket() as us:
         while True:
             res = await us.recv()
-            user_data_handler(res)
+            await user_data_handler(res)
 
     await client.close_connection()
 

@@ -3,7 +3,7 @@ from typing import TypedDict
 
 import websockets
 
-from .orders import Orders
+from orders import Orders
 
 class Signal(TypedDict):
     SYMBOL: str
