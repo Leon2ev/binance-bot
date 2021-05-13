@@ -1,7 +1,7 @@
 import decimal
 from typing import Any
 
-class Orders():
+class Order():
     def __init__(
         self,
         signal

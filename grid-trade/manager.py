@@ -3,7 +3,7 @@ from typing import Any, TypedDict
 from binance import AsyncClient
 from binance.exceptions import BinanceAPIException
 
-from orders import Orders
+from order import Order
 
 class Parameters(TypedDict):
     SYMBOL: str
@@ -18,9 +18,9 @@ class Parameters(TypedDict):
 class OrderManager():
     def __init__(self, client: AsyncClient):
             self.client = client
-            self.orders_list: list[Orders] = list() # list of orders instances
+            self.orders_list: list[Order] = list() # list of orders instances
 
-    async def place_buy_limit(self, order: Orders) -> None:
+    async def place_buy_limit(self, order: Order) -> None:
         step = order.step
         try:
             buy_order = await self.client.order_limit_buy(
@@ -34,7 +34,7 @@ class OrderManager():
         else:
             print(f'Step({step}) BUY limit for {order.symbol}, Price: {order.buy_limit_price_levels()[step]}, Amount: {order.buy_limit_base_volumes()[step]}')
 
-    async def place_sell_limit(self, order: Orders) -> None:
+    async def place_sell_limit(self, order: Order) -> None:
         step = order.step
         try:
             sell_order = await self.client.order_limit_sell(
@@ -60,7 +60,7 @@ class OrderManager():
             order_symbol = order['symbol']
             print(f'{status} {side} {order_type} for: {order_symbol}')
 
-    async def order_manager(self, order: Orders, msg: dict) -> None:
+    async def order_manager(self, order: Order, msg: dict) -> None:
         '''
         The main logic behind order placing. Place sell limit order when buy limit is filled.
         Remove order object and cancel open buy limit order if sell limit is filled.
@@ -95,7 +95,7 @@ class OrderManager():
         is_in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
         if not is_in_list:
             print('New pair added to the list:', parameters['SYMBOL'])
-            self.orders_list.append(Orders(parameters))
+            self.orders_list.append(Order(parameters))
 
     async def tickers_stream_handler(self, tickers: Any) -> None:
         '''
@@ -128,7 +128,7 @@ class OrderManager():
             print(msg['e'])
         else:
             if self.orders_list and execution:
-                order: Orders = next(filter(lambda x: msg['s'] == x.symbol, self.orders_list))
+                order: Order = next(filter(lambda x: msg['s'] == x.symbol, self.orders_list))
                 if order:
                     await self.order_manager(order, msg)
             else:
