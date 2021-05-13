@@ -40,7 +40,8 @@ class OrderManager():
             sell_order = await self.client.order_limit_sell(
                 symbol=order.symbol,
                 quantity=order.sell_limit_accumulated_base_volumes()[step],
-                price=str(order.sell_limit_price_levels()[step]))
+                price=str(order.sell_limit_price_levels()[step])
+            )
             order.sell_limit_id = sell_order['orderId']
         except BinanceAPIException as e:
             print(e)
@@ -61,10 +62,10 @@ class OrderManager():
             print(f'{status} {side} {order_type} for: {order_symbol}')
 
     async def order_manager(self, order: Order, msg: dict) -> None:
-        '''
-        The main logic behind order placing. Place sell limit order when buy limit is filled.
-        Remove order object and cancel open buy limit order if sell limit is filled.
-        '''
+        
+        '''The main logic behind order placing. Place sell limit order when buy limit is filled.
+        Remove Order class instance and cancel open buy limit order if sell limit is filled'''
+
         buy: bool = msg['S'] == 'BUY'
         sell: bool = msg['S'] == 'SELL'
         filled: bool = msg['X'] == 'FILLED'
@@ -98,10 +99,10 @@ class OrderManager():
             self.orders_list.append(Order(parameters))
 
     async def tickers_stream_handler(self, tickers: Any) -> None:
-        '''
-        By default should receive list[dict].
-        If get dict it's an error that will be hadled.
-        '''
+        
+        '''By default should receive list[dict].
+        If get dict it's an error that will be handled'''
+
         if tickers == dict() and tickers['e'] == 'error':
             print(tickers['e'])
         else:
@@ -117,11 +118,11 @@ class OrderManager():
                         order.initiated = True
 
     async def user_data_handler(self, msg: dict) -> None:
-        '''
-        Handle user account event stream.
-        Check if executed order symbol is insde signal_list.
-        Pass order object to order manager.
-        '''
+        
+        '''Handle user account event stream.
+        If executed order symbol is inside the order_list
+        pass this order class instance to order_manager'''
+
         error: bool = msg['e'] == 'error'
         execution: bool = msg['e'] == 'executionReport'
         if error:
