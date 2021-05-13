@@ -18,7 +18,7 @@ signal_list = signals.signal_list
 
 async def main():
     # initialise the client
-    client = await AsyncClient.create(api_key, secret_key, tld='us')
+    client = await AsyncClient.create(api_key, secret_key, tld='com')
 
     # initialise websocket factory manager
     bsm = BinanceSocketManager(client)
@@ -90,7 +90,6 @@ async def main():
             signal_list.remove(order)
 
     async def tickers_stream_handler(tickers: Any) -> None:
-        print(tickers)
         '''
         By default should receive list[dict].
         If get dict it's an error that will be hadled.
@@ -127,24 +126,28 @@ async def main():
             else:
                 print('Unhandled event:', msg['e'])
 
-    # create ticker socket listener
-    async with bsm.miniticker_socket() as mts:
-        while True:
-            res = await mts.recv()
-            await tickers_stream_handler(res)
+    async def miniticker_socket(bsm):
+        # create ticker socket listener
+        async with bsm.miniticker_socket() as mts:
+            while True:
+                res = await mts.recv()
+                await tickers_stream_handler(res)
+                await asyncio.sleep(1)
 
-    # create user socket listener
-    async with bsm.user_socket() as us:
-        while True:
-            res = await us.recv()
-            await user_data_handler(res)
+    async def user_socket(bsm):
+        # create user socket listener
+        async with bsm.user_socket() as us:
+            while True:
+                res = await us.recv()
+                await user_data_handler(res)
+                await asyncio.sleep(1)
+
+    await asyncio.gather(miniticker_socket(bsm), user_socket(bsm))
 
     await client.close_connection()
-
 
 if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
-    loop.create_task(main())
     loop.create_task(signals.run())
-    loop.run_forever()
+    loop.run_until_complete(main())
