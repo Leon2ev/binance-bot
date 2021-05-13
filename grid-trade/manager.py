@@ -1,14 +1,24 @@
-from typing import Any
+from typing import Any, TypedDict
 
 from binance import AsyncClient
 from binance.exceptions import BinanceAPIException
 
 from orders import Orders
 
+class Parameters(TypedDict):
+    SYMBOL: str
+    OPEN_PRICE: float
+    FIRST_ORDER_QUOTE: int
+    COEFFICIENT_QUOTE: float
+    COEFFICIENT_BASE: float
+    COEFFICIENT_FIX: float
+    COEFFICIENT_SET: int
+    STEPS: int
+
 class OrderManager():
-    def __init__(self, client: AsyncClient, grids_queue: list[Orders]):
+    def __init__(self, client: AsyncClient):
             self.client = client
-            self.grids_queue = grids_queue
+            self.orders_list: list[Orders] = list() # list of orders instances
 
     async def place_buy_limit(self, order: Orders) -> None:
         step = order.step
@@ -75,7 +85,17 @@ class OrderManager():
             orderId = order.buy_limit_id
             await self.cancel_order(symbol=symbol, orderId=orderId)
             print(f'Fix for: {order.symbol}')
-            self.grids_queue.remove(order)
+            self.orders_list.remove(order)
+
+    def handle_parameters(self, parameters: Parameters) -> None:
+
+        '''Create instance of orders grid with received parameters and add it to the
+        orders_list if instance for the same symbol is not already inside the list.'''
+
+        is_in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
+        if not is_in_list:
+            print('New pair added to the list:', parameters['SYMBOL'])
+            self.orders_list.append(Orders(parameters))
 
     async def tickers_stream_handler(self, tickers: Any) -> None:
         '''
@@ -89,7 +109,7 @@ class OrderManager():
                 orders_to_place: list = list(filter(lambda x:
                     ticker['s'] == x.symbol and
                     float(ticker['c']) <= x.triger_buy_limit() and
-                    x.initiated == False, self.grids_queue))
+                    x.initiated == False, self.orders_list))
                 if orders_to_place:
                     for order in orders_to_place:
                         print(f'Pair: {order.symbol} Step: {order.step}')
@@ -107,8 +127,8 @@ class OrderManager():
         if error:
             print(msg['e'])
         else:
-            if self.grids_queue and execution:
-                order: Orders = next(filter(lambda x: msg['s'] == x.symbol, self.grids_queue))
+            if self.orders_list and execution:
+                order: Orders = next(filter(lambda x: msg['s'] == x.symbol, self.orders_list))
                 if order:
                     await self.order_manager(order, msg)
             else:

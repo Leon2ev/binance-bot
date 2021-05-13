@@ -1,17 +1,15 @@
 import asyncio
+import json
 import os
 
+import websockets
 from binance import AsyncClient, BinanceSocketManager
 
 from manager import OrderManager
-from signals import Signals
 
 api_key = os.getenv("API_PUBLIC_BINANCE")
 secret_key = os.getenv("API_SECRET_BINANCE")
-
 token: str = str(os.getenv("RTW_TOKEN"))
-signals = Signals(token)
-signal_list = signals.signal_list
 
 async def main() -> None:
 
@@ -19,10 +17,25 @@ async def main() -> None:
 
     bsm = BinanceSocketManager(client)
 
-    manager = OrderManager(client, signal_list)
+    manager = OrderManager(client)
+
+    async def parameters_socket() -> None:
+
+        '''Create RTW channel connection thst will listen for incomming
+        parameters which will be used to create Order class instance'''
+
+        uri = "wss://websocket.cioty.com/crypto/bot/1/channel"
+        async with websockets.connect(uri) as websocket:
+            await websocket.send('{"token":"' + token + '"}')
+            print('Connected to rtw channel')
+            while True:
+                res = await websocket.recv()
+                res_json = json.loads(res)
+                parameters = res_json['RTW']
+                manager.handle_parameters(parameters)
+                await asyncio.sleep(1)
 
     async def miniticker_socket(bsm) -> None:
-        # create ticker socket listener
         async with bsm.miniticker_socket() as mts:
             while True:
                 res = await mts.recv()
@@ -30,19 +43,17 @@ async def main() -> None:
                 await asyncio.sleep(1)
 
     async def user_socket(bsm) -> None:
-        # create user socket listener
         async with bsm.user_socket() as us:
             while True:
                 res = await us.recv()
                 await manager.user_data_handler(res)
                 await asyncio.sleep(1)
 
-    await asyncio.gather(miniticker_socket(bsm), user_socket(bsm))
+    await asyncio.gather(miniticker_socket(bsm), user_socket(bsm), parameters_socket())
 
     await client.close_connection()
 
 if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
-    loop.create_task(signals.run())
     loop.run_until_complete(main())
