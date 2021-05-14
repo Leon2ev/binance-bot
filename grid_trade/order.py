@@ -10,6 +10,8 @@ class Order():
     ):
         for key, value in signal.items():
             setattr(self, key.lower(), value)
+            self.tick_size: float = float()
+            self.step_size: float = float()
             self.step: int = 0
             self.initiated: bool = False
             self.buy_limit_id: int = int()
@@ -59,7 +61,7 @@ class Order():
                 i += 1
             else:
                 exponential = self.exponential_coefficient(i)
-                price_level = price_level - price_level * exponential
+                price_level = round_step_size(price_level - price_level * exponential, self.tick_size)
                 price_levels.append(price_level)
                 i += 1
 
@@ -73,7 +75,8 @@ class Order():
             self.buy_limit_quote_volumes(),
             self.buy_limit_price_levels()
             ):
-                volumes.append(quote / price)
+                amount = round_step_size(quote / price, self.tick_size)
+                volumes.append(amount)
 
         return volumes
 
@@ -83,7 +86,7 @@ class Order():
         current: float = float()
 
         for i in x:
-            current = current + i
+            current = round_step_size(current + i, self.tick_size)
             cum_sum.append(current)
 
         return cum_sum
@@ -104,6 +107,7 @@ class Order():
             self.buy_limit_accumulated_quote_volumes(),
             self.sell_limit_accumulated_base_volumes()
             ):
-                price_levels.append((quote + quote * self.coefficient_fix / 100) / price)
+                price_level = round_step_size((quote + quote * self.coefficient_fix / 100) / price, self.step_size)
+                price_levels.append(price_level)
 
         return price_levels
