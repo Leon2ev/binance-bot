@@ -6,13 +6,13 @@ from binance.helpers import round_step_size
 class Order():
     def __init__(
         self,
-        signal
+        parameters
     ):
-        for key, value in signal.items():
+        for key, value in parameters.items():
             setattr(self, key.lower(), value)
             self.tick_size: float = float()
             self.step_size: float = float()
-            self.step: int = 0
+            self.step: int = int(0)
             self.initiated: bool = False
             self.buy_limit_id: int = int()
             self.sell_limit_id: int = int()

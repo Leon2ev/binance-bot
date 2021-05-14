@@ -5,6 +5,7 @@ from binance.exceptions import BinanceAPIException
 
 from order import Order
 
+
 # Incomming parameters type that will be received from RTW
 class Parameters(TypedDict):
     SYMBOL: str
@@ -16,13 +17,16 @@ class Parameters(TypedDict):
     COEFFICIENT_SET: int
     STEPS: int
 
+
 class OrderManager():
     def __init__(self, client: AsyncClient):
             self.client = client
             self.orders_list: list[Order] = list() # list of Order instances
 
+
     async def place_buy_limit(self, order: Order) -> None:
         step = order.step
+
         try:
             buy_order = await self.client.order_limit_buy(
                 symbol=order.symbol,
@@ -35,8 +39,10 @@ class OrderManager():
         else:
             print(f'Step({step}) BUY limit for {order.symbol}, Price: {order.buy_limit_price_levels()[step]}, Amount: {order.buy_limit_base_volumes()[step]}')
 
+
     async def place_sell_limit(self, order: Order) -> None:
         step = order.step
+
         try:
             sell_order = await self.client.order_limit_sell(
                 symbol=order.symbol,
@@ -51,6 +57,7 @@ class OrderManager():
 
     
     async def cancel_order(self, symbol: str, orderId: int) -> None:
+
         try:
             order = await self.client.cancel_order(symbol=symbol, orderId=orderId)
         except BinanceAPIException as e:
@@ -63,7 +70,7 @@ class OrderManager():
             print(f'{status} {side} {order_type} for: {order_symbol}')
 
     
-    async def get_symbol_filters(self, order: Order) -> Order:
+    async def add_filters(self, order: Order) -> Order:
         symbol_info = await self.client.get_symbol_info(order.symbol)
         symbol_filters = symbol_info['filters']
         price_filter = next(filter(lambda x: "PRICE_FILTER" == x['filterType'], symbol_filters))
@@ -86,6 +93,7 @@ class OrderManager():
         
         if buy and filled and order.step < order.steps:
             orderId = order.sell_limit_id
+
             if orderId:
                 await self.cancel_order(symbol=symbol, orderId=orderId)
                 await self.place_sell_limit(order)
@@ -95,11 +103,13 @@ class OrderManager():
             order.step += 1
             print(f'Pair: {order.symbol} Step: {order.step}')
             await self.place_buy_limit(order)
+
         elif sell and filled:
             orderId = order.buy_limit_id
             await self.cancel_order(symbol=symbol, orderId=orderId)
             print(f'Fix for: {order.symbol}')
             self.orders_list.remove(order)
+
 
     async def handle_parameters(self, parameters: Parameters) -> None:
 
@@ -107,11 +117,13 @@ class OrderManager():
         orders_list if instance with the same symbol is not already inside the list'''
 
         is_in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
+
         if not is_in_list:
             print('New pair added to the list:', parameters['SYMBOL'])
             order = Order(parameters)
-            order = await self.get_symbol_filters(order)
+            order = await self.add_filters(order)
             self.orders_list.append(order)
+
 
     async def handle_minitickers(self, tickers: Any) -> None:
         
@@ -132,6 +144,7 @@ class OrderManager():
                         await self.place_buy_limit(order)
                         order.initiated = True
 
+
     async def handle_user_data(self, msg: dict) -> None:
         
         '''Handle user account event stream.
@@ -140,6 +153,7 @@ class OrderManager():
 
         error: bool = msg['e'] == 'error'
         execution: bool = msg['e'] == 'executionReport'
+        
         if error:
             print(msg['e'])
         else:
