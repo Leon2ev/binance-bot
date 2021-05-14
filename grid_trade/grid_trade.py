@@ -32,7 +32,7 @@ async def main() -> None:
                 res = await websocket.recv()
                 res_json = json.loads(res)
                 parameters = res_json['RTW']
-                manager.handle_parameters(parameters)
+                await manager.handle_parameters(parameters)
                 await asyncio.sleep(1)
 
     async def miniticker_socket(bsm) -> None:

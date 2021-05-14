@@ -62,6 +62,18 @@ class OrderManager():
             order_symbol = order['symbol']
             print(f'{status} {side} {order_type} for: {order_symbol}')
 
+    
+    async def get_symbol_filters(self, order: Order) -> Order:
+        symbol_info = await self.client.get_symbol_info(order.symbol)
+        symbol_filters = symbol_info['filters']
+        price_filter = next(filter(lambda x: "PRICE_FILTER" == x['filterType'], symbol_filters))
+        lot_size = next(filter(lambda x: "LOT_SIZE" == x['filterType'], symbol_filters))
+        order.tick_size = price_filter['tickSize']
+        order.step_size = lot_size['stepSize']
+
+        return order
+
+
     async def manager(self, order: Order, msg: dict) -> None:
         
         '''The main logic behind order placing. Place sell limit order when buy limit is filled.
@@ -89,7 +101,7 @@ class OrderManager():
             print(f'Fix for: {order.symbol}')
             self.orders_list.remove(order)
 
-    def handle_parameters(self, parameters: Parameters) -> None:
+    async def handle_parameters(self, parameters: Parameters) -> None:
 
         '''Create instance of Order class with received parameters and add it to the
         orders_list if instance with the same symbol is not already inside the list'''
@@ -97,7 +109,9 @@ class OrderManager():
         is_in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
         if not is_in_list:
             print('New pair added to the list:', parameters['SYMBOL'])
-            self.orders_list.append(Order(parameters))
+            order = Order(parameters)
+            order = await self.get_symbol_filters(order)
+            self.orders_list.append(order)
 
     async def handle_minitickers(self, tickers: Any) -> None:
         
