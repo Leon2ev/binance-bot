@@ -21,7 +21,7 @@ async def main() -> None:
 
     async def parameters_socket() -> None:
 
-        '''Create RTW channel connection thst will listen for incomming
+        '''Create RTW channel connection that will listen for incomming
         parameters which will be used to create Order class instance'''
 
         uri = "wss://websocket.cioty.com/crypto/bot/1/channel"
@@ -36,17 +36,27 @@ async def main() -> None:
                 await asyncio.sleep(1)
 
     async def miniticker_socket(bsm) -> None:
+
+        '''Binance websocket connection. Present list of mini tickers
+        for all markets that have changed and pass it to the handler'''
+
         async with bsm.miniticker_socket() as mts:
+            print('Connected to miniticker socket')
             while True:
                 res = await mts.recv()
-                await manager.tickers_stream_handler(res)
+                await manager.handle_minitickers(res)
                 await asyncio.sleep(1)
 
     async def user_socket(bsm) -> None:
+
+        '''Binance websocket connection. Listen for all events from
+        the users account and pass it to the handler'''
+
         async with bsm.user_socket() as us:
+            print('Connected to user socket')
             while True:
                 res = await us.recv()
-                await manager.user_data_handler(res)
+                await manager.handle_user_data(res)
                 await asyncio.sleep(1)
 
     await asyncio.gather(miniticker_socket(bsm), user_socket(bsm), parameters_socket())

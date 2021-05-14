@@ -5,6 +5,7 @@ from binance.exceptions import BinanceAPIException
 
 from order import Order
 
+# Incomming parameters type that will be received from RTW
 class Parameters(TypedDict):
     SYMBOL: str
     OPEN_PRICE: float
@@ -18,7 +19,7 @@ class Parameters(TypedDict):
 class OrderManager():
     def __init__(self, client: AsyncClient):
             self.client = client
-            self.orders_list: list[Order] = list() # list of orders instances
+            self.orders_list: list[Order] = list() # list of Order instances
 
     async def place_buy_limit(self, order: Order) -> None:
         step = order.step
@@ -61,7 +62,7 @@ class OrderManager():
             order_symbol = order['symbol']
             print(f'{status} {side} {order_type} for: {order_symbol}')
 
-    async def order_manager(self, order: Order, msg: dict) -> None:
+    async def manager(self, order: Order, msg: dict) -> None:
         
         '''The main logic behind order placing. Place sell limit order when buy limit is filled.
         Remove Order class instance and cancel open buy limit order if sell limit is filled'''
@@ -90,15 +91,15 @@ class OrderManager():
 
     def handle_parameters(self, parameters: Parameters) -> None:
 
-        '''Create instance of orders grid with received parameters and add it to the
-        orders_list if instance for the same symbol is not already inside the list.'''
+        '''Create instance of Order class with received parameters and add it to the
+        orders_list if instance with the same symbol is not already inside the list'''
 
         is_in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
         if not is_in_list:
             print('New pair added to the list:', parameters['SYMBOL'])
             self.orders_list.append(Order(parameters))
 
-    async def tickers_stream_handler(self, tickers: Any) -> None:
+    async def handle_minitickers(self, tickers: Any) -> None:
         
         '''By default should receive list[dict].
         If get dict it's an error that will be handled'''
@@ -117,11 +118,11 @@ class OrderManager():
                         await self.place_buy_limit(order)
                         order.initiated = True
 
-    async def user_data_handler(self, msg: dict) -> None:
+    async def handle_user_data(self, msg: dict) -> None:
         
         '''Handle user account event stream.
         If executed order symbol is inside the order_list
-        pass this order class instance to order_manager'''
+        pass this Order class instance to manager'''
 
         error: bool = msg['e'] == 'error'
         execution: bool = msg['e'] == 'executionReport'
@@ -131,6 +132,6 @@ class OrderManager():
             if self.orders_list and execution:
                 order: Order = next(filter(lambda x: msg['s'] == x.symbol, self.orders_list))
                 if order:
-                    await self.order_manager(order, msg)
+                    await self.manager(order, msg)
             else:
                 print('Unhandled event:', msg['e'])
