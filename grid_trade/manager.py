@@ -75,8 +75,8 @@ class OrderManager():
         symbol_filters = symbol_info['filters']
         price_filter = next(filter(lambda x: "PRICE_FILTER" == x['filterType'], symbol_filters))
         lot_size = next(filter(lambda x: "LOT_SIZE" == x['filterType'], symbol_filters))
-        order.tick_size = price_filter['tickSize']
-        order.step_size = lot_size['stepSize']
+        order.tick_size = float(price_filter['tickSize'])
+        order.step_size = float(lot_size['stepSize'])
 
         return order
 
@@ -153,7 +153,7 @@ class OrderManager():
 
         error: bool = msg['e'] == 'error'
         execution: bool = msg['e'] == 'executionReport'
-        
+
         if error:
             print(msg['e'])
         else:
