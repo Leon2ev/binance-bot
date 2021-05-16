@@ -30,14 +30,14 @@ class OrderManager():
         try:
             buy_order = await self.client.order_limit_buy(
                 symbol=order.symbol,
-                quantity=order.buy_limit_base_volumes()[step],
-                price=str(order.buy_limit_price_levels()[step])
+                quantity=order.buy_quantity()[step],
+                price=str(order.buy_level()[step])
             )
             order.buy_limit_id = buy_order['orderId']
         except BinanceAPIException as e:
             print(e)
         else:
-            print(f'Step({step}) BUY limit for {order.symbol}, Price: {order.buy_limit_price_levels()[step]}, Amount: {order.buy_limit_base_volumes()[step]}')
+            print(f'Step({step}) BUY limit for {order.symbol}, Price: {order.buy_level()[step]}, Amount: {order.buy_quantity()[step]}')
 
 
     async def place_sell_limit(self, order: Order) -> None:
@@ -46,14 +46,14 @@ class OrderManager():
         try:
             sell_order = await self.client.order_limit_sell(
                 symbol=order.symbol,
-                quantity=order.sell_limit_accumulated_base_volumes()[step],
-                price=str(order.sell_limit_price_levels()[step])
+                quantity=order.sell_quantity()[step],
+                price=str(order.sell_level()[step])
             )
             order.sell_limit_id = sell_order['orderId']
         except BinanceAPIException as e:
             print(e)
         else:
-            print(f'Step({step}) SELL limit for {order.symbol}, Price: {order.sell_limit_price_levels()[step]}, Amount {order.sell_limit_accumulated_base_volumes()[step]}')
+            print(f'Step({step}) SELL limit for {order.symbol}, Price: {order.sell_level()[step]}, Amount {order.sell_quantity()[step]}')
 
     
     async def cancel_order(self, symbol: str, orderId: int) -> None:

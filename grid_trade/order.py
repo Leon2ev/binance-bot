@@ -25,11 +25,11 @@ class Order():
         return self.open_price + self.open_price / self.coefficient_set
 
 
-    def exponential_coefficient(self, index: int) -> float:
+    def coefficient_grow(self, index: int) -> float:
         return self.coefficient_base / 100 * (1 + index / 10)
 
 
-    def buy_limit_quote_volumes(self) -> list[float]:
+    def quote_amount(self) -> list[float]:
         volumes: list[float] = list()
         volume: float = float()
         i: int = int(1)
@@ -48,7 +48,7 @@ class Order():
         return volumes
 
 
-    def buy_limit_price_levels(self) -> list[float]:
+    def buy_level(self) -> list[float]:
         price_levels: list[float] = list()
         price_level: float = float()
         i: int = int(1)
@@ -60,7 +60,7 @@ class Order():
                 price_levels.append(price_level)
                 i += 1
             else:
-                exponential = self.exponential_coefficient(i)
+                exponential = self.coefficient_grow(i)
                 price_level = round_step_size(price_level - price_level * exponential, self.tick_size)
                 price_levels.append(price_level)
                 i += 1
@@ -68,12 +68,12 @@ class Order():
         return price_levels
 
 
-    def buy_limit_base_volumes(self) -> list[float]:
+    def buy_quantity(self) -> list[float]:
         volumes: list[float] = list()
 
         for quote, price in zip(
-            self.buy_limit_quote_volumes(),
-            self.buy_limit_price_levels()
+            self.quote_amount(),
+            self.buy_level()
             ):
                 amount = round_step_size(quote / price, self.tick_size)
                 volumes.append(amount)
@@ -92,20 +92,20 @@ class Order():
         return cum_sum
 
 
-    def buy_limit_accumulated_quote_volumes(self) -> list[float]:
-        return self.cumulative_sum(self.buy_limit_quote_volumes())
+    def cumulative_quote(self) -> list[float]:
+        return self.cumulative_sum(self.quote_amount())
 
 
-    def sell_limit_accumulated_base_volumes(self) -> list[float]:
-        return self.cumulative_sum(self.buy_limit_base_volumes())
+    def sell_quantity(self) -> list[float]:
+        return self.cumulative_sum(self.buy_quantity())
 
 
-    def sell_limit_price_levels(self) -> list[float]:
+    def sell_level(self) -> list[float]:
         price_levels: list[float] = list()
 
         for quote, price in zip(
-            self.buy_limit_accumulated_quote_volumes(),
-            self.sell_limit_accumulated_base_volumes()
+            self.cumulative_quote(),
+            self.sell_quantity()
             ):
                 price_level = round_step_size((quote + quote * self.coefficient_fix / 100) / price, self.step_size)
                 price_levels.append(price_level)
