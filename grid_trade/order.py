@@ -75,7 +75,7 @@ class Order():
             self.quote_amount(),
             self.buy_level()
             ):
-                amount = round_step_size(quote / price, self.tick_size)
+                amount = round_step_size(quote / price, self.step_size)
                 volumes.append(amount)
 
         return volumes
@@ -86,7 +86,7 @@ class Order():
         current: float = float()
 
         for i in x:
-            current = round_step_size(current + i, self.tick_size)
+            current = round_step_size(current + i, self.step_size)
             cum_sum.append(current)
 
         return cum_sum
@@ -103,11 +103,11 @@ class Order():
     def sell_level(self) -> list[float]:
         price_levels: list[float] = list()
 
-        for quote, price in zip(
+        for quote, quantity in zip(
             self.cumulative_quote(),
             self.sell_quantity()
             ):
-                price_level = round_step_size((quote + quote * self.coefficient_fix / 100) / price, self.step_size)
+                price_level = round_step_size((quote + quote * self.coefficient_fix / 100) / quantity, self.tick_size)
                 price_levels.append(price_level)
 
         return price_levels
