@@ -117,7 +117,7 @@ class OrderManager():
         orders_list if instance with the same symbol is not already inside the list'''
 
         is_in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
-
+        
         if not is_in_list:
             print('New pair added to the list:', parameters['SYMBOL'])
             order = Order(parameters)
@@ -131,7 +131,7 @@ class OrderManager():
         If get dict it's an error that will be handled'''
 
         if tickers == dict() and tickers['e'] == 'error':
-            print(tickers['e'])
+            print('Tickers error:', tickers['e'])
         else:
             for ticker in tickers:
                 orders_to_place: list = list(filter(lambda x:
@@ -157,7 +157,7 @@ class OrderManager():
         if error:
             print(msg['e'])
         else:
-            if self.orders_list and execution:
+            if execution and any([x.symbol == msg['s'] for x in self.orders_list]):
                 order: Order = next(filter(lambda x: msg['s'] == x.symbol, self.orders_list))
                 if order:
                     await self.manager(order, msg)

@@ -33,7 +33,7 @@ async def main() -> None:
                 res_json = json.loads(res)
                 parameters = res_json['RTW']
                 await manager.handle_parameters(parameters)
-                await asyncio.sleep(1)
+
 
     async def miniticker_socket(bsm) -> None:
 
@@ -45,7 +45,7 @@ async def main() -> None:
             while True:
                 res = await mts.recv()
                 await manager.handle_minitickers(res)
-                await asyncio.sleep(1)
+
 
     async def user_socket(bsm) -> None:
 
@@ -56,10 +56,17 @@ async def main() -> None:
             print('Connected to user socket')
             while True:
                 res = await us.recv()
-                await manager.handle_user_data(res)
-                await asyncio.sleep(1)
+                if res:
+                    await manager.handle_user_data(res)
 
-    await asyncio.gather(miniticker_socket(bsm), user_socket(bsm), parameters_socket())
+
+    user_socket_task = asyncio.create_task(user_socket(bsm))
+    miniticker_socket_task = asyncio.create_task(miniticker_socket(bsm))
+    parameters_socket_task = asyncio.create_task(parameters_socket())
+    
+    await user_socket_task
+    await miniticker_socket_task
+    await parameters_socket_task
 
     await client.close_connection()
 
