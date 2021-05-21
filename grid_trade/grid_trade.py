@@ -9,6 +9,7 @@ from manager import OrderManager
 
 api_key = os.getenv("API_PUBLIC_BINANCE")
 secret_key = os.getenv("API_SECRET_BINANCE")
+parameters_url = os.getenv("PARAMETERS_URL")
 token: str = str(os.getenv("RTW_TOKEN"))
 
 async def main() -> None:
@@ -24,8 +25,7 @@ async def main() -> None:
         '''Create RTW channel connection that will listen for incomming
         parameters which will be used to create Order class instance'''
 
-        uri = "wss://websocket.cioty.com/crypto/bot/1/channel"
-        async with websockets.connect(uri) as websocket:
+        async with websockets.connect(parameters_url) as websocket:
             await websocket.send('{"token":"' + token + '"}')
             print('Connected to rtw channel')
             while True:

@@ -1,4 +1,4 @@
-from typing import Any, TypedDict
+from typing import Any, TypedDict, Union
 
 from binance import AsyncClient
 from binance.exceptions import BinanceAPIException
@@ -16,6 +16,7 @@ class Parameters(TypedDict):
     COEFFICIENT_FIX: float
     COEFFICIENT_SET: int
     STEPS: int
+    DELETE: Union[bool, None]
 
 
 class OrderManager():
@@ -116,13 +117,26 @@ class OrderManager():
         '''Create instance of Order class with received parameters and add it to the
         orders_list if instance with the same symbol is not already inside the list'''
 
-        is_in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
-        
-        if not is_in_list:
-            print('New pair added to the list:', parameters['SYMBOL'])
+        in_list = list(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
+
+        if not in_list and not parameters['DELETE']:
             order = Order(parameters)
             order = await self.add_filters(order)
             self.orders_list.append(order)
+            print('New pair added to the list:', parameters['SYMBOL'])
+            symbols_in_list = [o.symbol for o in self.orders_list]
+            print('Pairs in queue:', symbols_in_list)
+        elif in_list and parameters['DELETE']:
+            order = next(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
+            self.orders_list.remove(order)
+            print('Pair removed:', parameters['SYMBOL'])
+            symbols_in_list = [o.symbol for o in self.orders_list]
+            print('Pairs in queue:', symbols_in_list)
+        else:
+            if parameters['DELETE']:
+                print('Pair is not in queue:', parameters['SYMBOL'])
+            else:
+                print('Pair already in queue:', parameters['SYMBOL'])
 
 
     async def handle_minitickers(self, tickers: Any) -> None:
