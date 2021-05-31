@@ -7,6 +7,7 @@ name = "pypi"
 python-binance = "*"
 python-dotenv = "*"
 websockets = "*"
+requests = "*"
 
 [dev-packages]
 
