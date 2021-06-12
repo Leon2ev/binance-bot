@@ -31,7 +31,7 @@ class OrderManager(Backup):
         backup_data = self.read_backup_data()
 
         if backup_data:
-            for pair in backup_data['pairs']:
+            for pair in backup_data['orders_list']:
                 order: Order = Order(pair, backup=True)
                 self.orders_list.append(order)
             
@@ -102,7 +102,7 @@ class OrderManager(Backup):
         # Add order to orders list and update backup.json
 
         self.orders_list.append(order)
-        orders_dict = dict(pairs=[o.__dict__ for o in self.orders_list])
+        orders_dict = dict(orders_list=[o.__dict__ for o in self.orders_list])
         self.write_backup_data(orders_dict)
 
 
@@ -110,7 +110,7 @@ class OrderManager(Backup):
         # Remove order from orders list and update backup.json
 
         self.orders_list.remove(order)
-        orders_dict = dict(pairs=[o.__dict__ for o in self.orders_list])
+        orders_dict = dict(orders_list=[o.__dict__ for o in self.orders_list])
         self.write_backup_data(orders_dict)
 
 
