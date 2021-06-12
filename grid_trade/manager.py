@@ -4,6 +4,7 @@ from binance import AsyncClient
 from binance.exceptions import BinanceAPIException
 
 from order import Order
+from backup import Backup
 
 
 # Incomming parameters type that will be received from RTW
@@ -19,10 +20,23 @@ class Parameters(TypedDict):
     DELETE: Union[bool, None]
 
 
-class OrderManager():
+class OrderManager(Backup):
     def __init__(self, client: AsyncClient):
             self.client = client
             self.orders_list: list[Order] = list() # list of Order instances
+
+    
+    def get_backup_data(self):
+        # Using getter from Backup class to get backup data if exist
+        backup_data = self.read_backup_data()
+
+        if backup_data:
+            for pair in backup_data['pairs']:
+                order: Order = Order(pair, backup=True)
+                self.orders_list.append(order)
+            
+            symbols_list = [o.symbol for o in self.orders_list]
+            print('Pairs in queue:', symbols_list)
 
 
     async def place_buy_limit(self, order: Order) -> None:
@@ -72,6 +86,8 @@ class OrderManager():
 
     
     async def add_filters(self, order: Order) -> Order:
+        # https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#filters
+
         symbol_info = await self.client.get_symbol_info(order.symbol)
         symbol_filters = symbol_info['filters']
         price_filter = next(filter(lambda x: "PRICE_FILTER" == x['filterType'], symbol_filters))
@@ -80,6 +96,22 @@ class OrderManager():
         order.step_size = float(lot_size['stepSize'])
 
         return order
+
+
+    def add_order(self, order: Order) -> None:
+        # Add order to orders list and update backup.json
+
+        self.orders_list.append(order)
+        orders_dict = dict(pairs=[o.__dict__ for o in self.orders_list])
+        self.write_backup_data(orders_dict)
+
+
+    def remove_order(self, order: Order) -> None:
+        # Remove order from orders list and update backup.json
+
+        self.orders_list.remove(order)
+        orders_dict = dict(pairs=[o.__dict__ for o in self.orders_list])
+        self.write_backup_data(orders_dict)
 
 
     async def manager(self, order: Order, msg: dict) -> None:
@@ -102,14 +134,14 @@ class OrderManager():
                 await self.place_sell_limit(order)
 
             order.step += 1
-            print(f'Pair: {order.symbol} Step: {order.step}')
             await self.place_buy_limit(order)
+            print(f'Pair: {order.symbol} Step: {order.step}')
 
         elif sell and filled:
             orderId = order.buy_limit_id
             await self.cancel_order(symbol=symbol, orderId=orderId)
+            self.remove_order(order)
             print(f'Fix for: {order.symbol}')
-            self.orders_list.remove(order)
 
 
     async def handle_parameters(self, parameters: Parameters) -> None:
@@ -122,16 +154,18 @@ class OrderManager():
         if not in_list and not parameters['DELETE']:
             order = Order(parameters)
             order = await self.add_filters(order)
-            self.orders_list.append(order)
+            self.add_order(order)
+            symbols_list = [o.symbol for o in self.orders_list]
+
             print('New pair added to the list:', parameters['SYMBOL'])
-            symbols_in_list = [o.symbol for o in self.orders_list]
-            print('Pairs in queue:', symbols_in_list)
+            print('Pairs in queue:', symbols_list)
         elif in_list and parameters['DELETE']:
             order = next(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
-            self.orders_list.remove(order)
+            self.remove_order(order)
+            symbols_list = [o.symbol for o in self.orders_list]
+
             print('Pair removed:', parameters['SYMBOL'])
-            symbols_in_list = [o.symbol for o in self.orders_list]
-            print('Pairs in queue:', symbols_in_list)
+            print('Pairs in queue:', symbols_list)
         else:
             if parameters['DELETE']:
                 print('Pair is not in queue:', parameters['SYMBOL'])

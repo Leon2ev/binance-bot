@@ -19,6 +19,7 @@ async def main() -> None:
     bsm = BinanceSocketManager(client)
 
     manager = OrderManager(client)
+    manager.get_backup_data()
 
     async def parameters_socket() -> None:
 

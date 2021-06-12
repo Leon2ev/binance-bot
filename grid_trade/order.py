@@ -6,16 +6,34 @@ from binance.helpers import round_step_size
 class Order():
     def __init__(
         self,
-        parameters
+        parameters,
+        backup: bool = False
     ):
-        for key, value in parameters.items():
-            setattr(self, key.lower(), value)
-            self.tick_size: float = float()
-            self.step_size: float = float()
-            self.step: int = int(0)
-            self.initiated: bool = False
-            self.buy_limit_id: int = int()
-            self.sell_limit_id: int = int()
+
+        '''Order class keeps all the information related to current trading pair state
+        and make calculaition of next possible orders depends on which parameters user
+        provides. 
+        
+        Argument "parameters" set by user is used to define trading parameters like
+        price levels and amount that should be traded on this levels.
+        
+        If "backup" is set to True that means that "parameters" was taken from the backup.
+        In this case they will contain more data, like placed orderID and current step if
+        user using grids for trading. "This is made to keep state for each trade when 
+        server restart.'''
+
+        if backup:
+            for key, value in parameters.items():
+                setattr(self, key.lower(), value)
+        else:
+            for key, value in parameters.items():
+                setattr(self, key.lower(), value)
+                self.tick_size: float = float()
+                self.step_size: float = float()
+                self.step: int = int()
+                self.initiated: bool = False
+                self.buy_limit_id: int = int()
+                self.sell_limit_id: int = int()
 
 
     def __getattr__(self, name: str) -> Any: pass
