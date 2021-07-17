@@ -1,4 +1,4 @@
-from typing import Any, TypedDict, Union
+from typing import Any, Literal, TypedDict, Union
 
 from binance import AsyncClient
 from binance.exceptions import BinanceAPIException
@@ -88,12 +88,13 @@ class OrderManager(Backup):
     async def add_filters(self, order: Order) -> Order:
         # https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#filters
 
-        symbol_info = await self.client.get_symbol_info(order.symbol)
-        symbol_filters = symbol_info['filters']
-        price_filter = next(filter(lambda x: "PRICE_FILTER" == x['filterType'], symbol_filters))
-        lot_size = next(filter(lambda x: "LOT_SIZE" == x['filterType'], symbol_filters))
-        order.tick_size = float(price_filter['tickSize'])
-        order.step_size = float(lot_size['stepSize'])
+        symbol_info  = await self.client.get_symbol_info(order.symbol)
+        if symbol_info:
+            symbol_filters = symbol_info['filters']
+            price_filter = next(filter(lambda x: "PRICE_FILTER" == x['filterType'], symbol_filters))
+            lot_size = next(filter(lambda x: "LOT_SIZE" == x['filterType'], symbol_filters))
+            order.tick_size = float(price_filter['tickSize'])
+            order.step_size = float(lot_size['stepSize'])
 
         return order
 
