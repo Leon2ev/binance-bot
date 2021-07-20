@@ -1,10 +1,10 @@
-from typing import Any, Literal, TypedDict, Union
+from typing import Any, TypedDict, Union
 
 from binance import AsyncClient
 from binance.exceptions import BinanceAPIException
 
 from order import Order
-from backup import Backup
+from backup import OrderListBackup
 
 
 # Incomming parameters type that will be received from RTW
@@ -20,19 +20,19 @@ class Parameters(TypedDict):
     DELETE: Union[bool, None]
 
 
-class OrderManager(Backup):
+class OrderManager(OrderListBackup):
     def __init__(self, client: AsyncClient):
             self.client = client
             self.orders_list: list[Order] = list() # list of Order instances
 
     
-    def get_backup_data(self):
-        # Using getter from Backup class to get backup data if exist
-        backup_data = self.read_backup_data()
+    def fetch_orders_list_backup(self) -> None:
+        # Fetch orders_list from DB
+        backup = self.get_orders_list_backup()
 
-        if backup_data:
-            for pair in backup_data['orders_list']:
-                order: Order = Order(pair, backup=True)
+        if backup:
+            for item in backup:
+                order: Order = Order(item, backup=True)
                 self.orders_list.append(order)
             
             symbols_list = [o.symbol for o in self.orders_list]
@@ -100,19 +100,15 @@ class OrderManager(Backup):
 
 
     def add_order(self, order: Order) -> None:
-        # Add order to orders list and update backup.json
-
+        # Add order to orders list and update backup
         self.orders_list.append(order)
-        orders_dict = dict(orders_list=[o.__dict__ for o in self.orders_list])
-        self.write_backup_data(orders_dict)
+        self.insert_item(order.__dict__)
 
 
     def remove_order(self, order: Order) -> None:
-        # Remove order from orders list and update backup.json
-
+        # Remove order from orders list and update backup
         self.orders_list.remove(order)
-        orders_dict = dict(orders_list=[o.__dict__ for o in self.orders_list])
-        self.write_backup_data(orders_dict)
+        self.delete_item(order.symbol)
 
 
     async def manager(self, order: Order, msg: dict) -> None:
@@ -158,7 +154,7 @@ class OrderManager(Backup):
             self.add_order(order)
             symbols_list = [o.symbol for o in self.orders_list]
 
-            print('New pair added to the list:', parameters['SYMBOL'])
+            print('Pait added:', parameters['SYMBOL'])
             print('Pairs in queue:', symbols_list)
         elif in_list and parameters['DELETE']:
             order = next(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))

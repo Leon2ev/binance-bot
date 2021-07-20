@@ -1,19 +1,23 @@
-import json
-from typing import Union
+import os
 
+from pymongo import MongoClient
 
-class Backup():
-    # Simple class for write and read backup data to or from a file.
+db_url = os.getenv("MONGO_DB")
+client: MongoClient
+if db_url:
+    client = MongoClient(db_url)
+else:
+    client = MongoClient('localhost', 27017)
 
-    def write_backup_data(self, orders_list: dict[str, list[dict]]) -> None:
-        with open('backup.json', 'w', encoding ='utf8') as backup_file:
-            json.dump(orders_list, backup_file, ensure_ascii = True)
-            print('Backup updated')
-    
+db = client['grid-trade']
+orders_list_backup = db['orders_list_backup']
 
-    def read_backup_data(self) -> Union[dict[str,list[dict]], None]:
-        with open('backup.json', 'r', encoding ='utf8') as backup_file:
-            try:
-                return json.load(backup_file)
-            except:
-                print('Backup is empty')
+class OrderListBackup():
+    def insert_item(self, order) -> None:
+        orders_list_backup.insert_one(order)
+
+    def delete_item(self, symbol) -> None:
+        orders_list_backup.find_one_and_delete({ 'symbol': symbol })
+
+    def get_orders_list_backup(self):
+        return orders_list_backup.find({})

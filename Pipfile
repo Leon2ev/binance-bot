@@ -8,6 +8,7 @@ python-binance = "*"
 python-dotenv = "*"
 websockets = "*"
 requests = "*"
+pymongo = {extras = ["srv"], version = "*"}
 
 [dev-packages]
 
