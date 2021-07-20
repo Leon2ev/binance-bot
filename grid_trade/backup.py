@@ -12,17 +12,8 @@ class Backup():
     
 
     def read_backup_data(self) -> Union[dict[str,list[dict]], None]:
-        self.create_backup_file()
         with open('backup.json', 'r', encoding ='utf8') as backup_file:
             try:
                 return json.load(backup_file)
             except:
                 print('Backup is empty')
-
-    def create_backup_file(self) -> None:
-        try:
-            backup_file = open('backup.json', 'r')
-            backup_file.close()
-        except:
-            backup_file = open('backup.json', 'w')
-            backup_file.close()
