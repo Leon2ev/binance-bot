@@ -1,1 +1,0 @@
-{"orders_list": [{"delete": "", "tick_size": 0.001, "step_size": 0.001, "step": 0, "initiated": false, "buy_limit_id": 0, "sell_limit_id": 0, "symbol": "ACMUSDT", "coefficient_fix": 5, "coefficient_base": 5, "coefficient_set": 600, "open_price": 1.725, "first_order_quote": 50, "coefficient_quote": 1.2, "steps": 5}]}
