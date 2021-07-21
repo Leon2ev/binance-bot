@@ -154,7 +154,7 @@ class OrderManager(OrderListBackup):
             self.add_order(order)
             symbols_list = [o.symbol for o in self.orders_list]
 
-            print('Pait added:', parameters['SYMBOL'])
+            print('Pair added:', parameters['SYMBOL'])
             print('Pairs in queue:', symbols_list)
         elif in_list and parameters['DELETE']:
             order = next(filter(lambda x: x.symbol == parameters['SYMBOL'], self.orders_list))
