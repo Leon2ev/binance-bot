@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from pymongo import MongoClient
 
@@ -13,11 +14,20 @@ db = client['grid-trade']
 orders_list_backup = db['orders_list_backup']
 
 class OrderListBackup():
-    def insert_item(self, order) -> None:
+
+    '''
+    Create orders_list_backup using Mongo DB. Backup is used in case of server restert.
+    When server will get back to work it will fetch backup and continue to work.
+    '''
+
+    def insert_item(self, order: dict[str,Any]) -> None:
+        # Insert single instance of Order to backup list
         orders_list_backup.insert_one(order)
 
-    def delete_item(self, symbol) -> None:
+    def delete_item(self, symbol: str) -> None:
+        # Remove single instance of Order from backup list
         orders_list_backup.find_one_and_delete({ 'symbol': symbol })
 
     def get_orders_list_backup(self):
+        # Return all Order instances from backup list
         return orders_list_backup.find({})
