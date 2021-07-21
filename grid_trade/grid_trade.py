@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import time
 
 import websockets
 from binance import AsyncClient, BinanceSocketManager
@@ -28,12 +29,20 @@ async def main() -> None:
 
         async with websockets.connect(parameters_url) as websocket:
             await websocket.send('{"token":"' + token + '"}')
-            print('Connected to rtw channel')
+            print('Connected to RTW channel')
             while True:
-                res = await websocket.recv()
-                res_json = json.loads(res)
-                parameters = res_json['RTW']
-                await manager.handle_parameters(parameters)
+                if websocket.open:
+                    res = await websocket.recv()
+                    res_json = json.loads(res)
+                    parameters = res_json['RTW']
+                    await manager.handle_parameters(parameters)
+                else:
+                    break
+
+            print('RTW channel connection lost')
+            print('Trying to reconnect...')
+            time.sleep(5)
+            await parameters_socket()
 
 
     async def miniticker_socket(bsm) -> None:
