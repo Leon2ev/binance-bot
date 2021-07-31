@@ -110,6 +110,11 @@ class OrderManager(OrderListBackup):
         self.orders_list.remove(order)
         self.delete_item(order.symbol)
 
+    def update_order(self, order: Order) -> None:
+        # Remove old order from backup and add new
+        self.delete_item(order.symbol)
+        self.insert_item(order.__dict__)
+
 
     async def manager(self, order: Order, msg: dict) -> None:
         
@@ -133,6 +138,7 @@ class OrderManager(OrderListBackup):
             order.step += 1
             await self.place_buy_limit(order)
             print(f'Pair: {order.symbol} Step: {order.step}')
+            self.update_order(order)
 
         elif sell and filled:
             orderId = order.buy_limit_id
